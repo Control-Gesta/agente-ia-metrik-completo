@@ -1,0 +1,194 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://metrik.local/onboarding.schema.json",
+  "title": "Metrik Onboarding Compiler",
+  "type": "object",
+  "required": ["schemaVersion", "client", "crm", "business", "channel", "operations", "credentials", "evalCases", "sources"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "client": {
+      "type": "object",
+      "required": ["name", "slug", "agentName", "owner"],
+      "properties": {
+        "name": { "type": "string", "minLength": 2 },
+        "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "agentName": { "type": "string", "minLength": 2 },
+        "owner": { "type": "string", "minLength": 2 }
+      }
+    },
+    "crm": {
+      "type": "object",
+      "required": ["type", "confirmed", "access", "pipeline", "stages"],
+      "properties": {
+        "type": { "enum": ["ghl", "kommo", "unknown"] },
+        "confirmed": { "type": "boolean" },
+        "access": { "$ref": "#/$defs/accessState" },
+        "pipeline": { "$ref": "#/$defs/crmItem" },
+        "stages": {
+          "type": "array",
+          "items": {
+            "allOf": [
+              { "$ref": "#/$defs/crmItem" },
+              {
+                "type": "object",
+                "required": ["position", "when", "aiCanMove"],
+                "properties": {
+                  "position": { "type": "integer", "minimum": 0 },
+                  "when": { "type": "string" },
+                  "aiCanMove": { "type": "boolean" }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "business": {
+      "type": "object",
+      "required": ["offer", "audience", "excludedAudience", "objective", "tone", "pricePolicy", "prices", "faq", "forbiddenPromises"],
+      "properties": {
+        "offer": { "$ref": "#/$defs/fact" },
+        "audience": { "$ref": "#/$defs/fact" },
+        "excludedAudience": { "$ref": "#/$defs/fact" },
+        "objective": { "$ref": "#/$defs/fact" },
+        "tone": { "$ref": "#/$defs/fact" },
+        "pricePolicy": { "enum": ["inform", "do-not-inform", "unknown"] },
+        "prices": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["product", "value", "currency", "confirmed", "source"],
+            "properties": {
+              "product": { "type": "string" },
+              "value": { "type": ["number", "string"] },
+              "currency": { "type": "string" },
+              "confirmed": { "type": "boolean" },
+              "source": { "type": "string" }
+            }
+          }
+        },
+        "faq": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["question", "answer", "confirmed", "source"],
+            "properties": {
+              "question": { "type": "string" },
+              "answer": { "type": "string" },
+              "confirmed": { "type": "boolean" },
+              "source": { "type": "string" }
+            }
+          }
+        },
+        "forbiddenPromises": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "channel": {
+      "type": "object",
+      "required": ["whatsapp", "sameNumberHasAnotherBot", "audioIn", "voiceOut", "imagesAndPdf"],
+      "properties": {
+        "whatsapp": { "enum": ["official", "uazapi", "unknown"] },
+        "sameNumberHasAnotherBot": { "type": "boolean" },
+        "audioIn": { "type": "boolean" },
+        "voiceOut": { "type": "boolean" },
+        "imagesAndPdf": { "type": "boolean" }
+      }
+    },
+    "operations": {
+      "type": "object",
+      "required": ["qualificationWhen", "aiLimit", "gateTag", "humanTag", "alertOwner", "followups", "recovery"],
+      "properties": {
+        "qualificationWhen": { "$ref": "#/$defs/fact" },
+        "aiLimit": { "type": "string" },
+        "gateTag": { "type": "string" },
+        "humanTag": { "type": "string" },
+        "alertOwner": { "type": "string" },
+        "followups": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["afterHours", "goal"],
+            "properties": {
+              "afterHours": { "type": "number", "minimum": 1 },
+              "goal": { "type": "string" }
+            }
+          }
+        },
+        "recovery": {
+          "type": "object",
+          "required": ["responseDefinition", "goalDefinition", "goalSignal", "attributionWindowHours", "assistedAttribution"],
+          "properties": {
+            "responseDefinition": { "$ref": "#/$defs/fact" },
+            "goalDefinition": { "$ref": "#/$defs/fact" },
+            "goalSignal": {
+              "type": "object",
+              "required": ["type", "id", "name", "confirmed", "source"],
+              "properties": {
+                "type": { "enum": ["stage", "field", "tag", "appointment", "webhook"] },
+                "id": { "type": ["string", "number"] },
+                "name": { "type": "string", "minLength": 1 },
+                "value": { "type": ["string", "number", "boolean", "null"] },
+                "confirmed": { "type": "boolean" },
+                "source": { "type": "string" }
+              }
+            },
+            "attributionWindowHours": { "type": "number", "minimum": 1 },
+            "assistedAttribution": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "credentials": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/accessState" }
+    },
+    "evalCases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "lead", "must", "mustNot"],
+        "properties": {
+          "id": { "type": "string" },
+          "lead": { "type": "string" },
+          "must": { "type": "array", "items": { "type": "string" } },
+          "mustNot": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "reference", "date"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "enum": ["client", "meeting", "document", "crm-api", "inference"] },
+          "reference": { "type": "string" },
+          "date": { "type": "string", "format": "date" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "accessState": { "enum": ["missing", "available", "validated", "not-applicable"] },
+    "fact": {
+      "type": "object",
+      "required": ["value", "confirmed", "source"],
+      "properties": {
+        "value": {},
+        "confirmed": { "type": "boolean" },
+        "source": { "type": "string" }
+      }
+    },
+    "crmItem": {
+      "type": "object",
+      "required": ["id", "name", "confirmed", "source"],
+      "properties": {
+        "id": { "type": ["string", "number", "null"] },
+        "name": { "type": "string" },
+        "confirmed": { "type": "boolean" },
+        "source": { "type": "string" }
+      }
+    }
+  }
+}
